@@ -1,89 +1,64 @@
-from MySQLdb.cursors import Cursor
-from flask import Flask,jsonify,request
-from flask_mysqldb import MySQL
-from config import config
+from flask import Flask, request
+from DAL import usuarios, productos
 
 app = Flask(__name__)
-conexion=MySQL(app)
 
+#INICIO ENTIDAD USUARIOS
 #Consultar Usuarios
 @app.route('/Usuarios', methods=['GET'])
 def listar_usuarios():
-    try:
-        cursor=conexion.connection.cursor()
-        sql = "SELECT * FROM Usuarios"
-        cursor.execute(sql)
-        datos=cursor.fetchall()
-        usuarios=[]
-        for fila in datos:
-            usuario={'id':fila[0],'nombre':fila[1],'correo':fila[2],'contrasena':fila[3],'fecha_registro':fila[4]}
-            usuarios.append(usuario)
-        return jsonify({'usuarios':usuarios,'mensaje':"Usuarios Listados"})
-    except Exception as e:
-        return jsonify({'mensaje':"HA OCURRIDO UN ERROR"})
+        return usuarios.listar_usuarios()
 
 #listar Usuario por ID
 @app.route('/Usuarios/<usuario_id>', methods=['GET'])
 def encontrar_usuario(usuario_id):
-    try:
-        cursor = conexion.connection.cursor()
-        sql = "SELECT usuario_id, nombre, correo FROM Usuarios WHERE usuario_id = '{0}'".format(usuario_id)
-        cursor.execute(sql)
-        datos = cursor.fetchone()
-        if datos != None:
-            usuario = {'id':datos[0], 'nombre':datos[1], 'correo':datos[2]}
-            return jsonify({'usuario':usuario, 'mensaje':'usuario encontrado!'})
-        else:
-            return jsonify({'mensaje':'USUARIO NO ENCONTRADO! :C'})
-    except Exception as e:
-        return jsonify({'mensaje':"ERROR"})
-
+         return usuarios.encontrar_usuario(usuario_id)
+ 
 #Ingresar Usuario
 @app.route('/Usuarios', methods=['POST'])
 def insertar_usuario():
-    try:
-        cursor=conexion.connection.cursor()
-        sql = """INSERT INTO Usuarios (nombre, correo, contrasena)
-        VALUES ('{0}','{1}','{2}')""".format(request.json['nombre'],
-        request.json['correo'],request.json['contrasena'])
-        cursor.execute(sql)
-        conexion.connection.commit()#confirma la insercion
-        return jsonify({'mensaje':'usuario registrado'})
-    except Exception as e:
-        return jsonify({'mensaje':'ERROR'})
-
-
+         return usuarios.insertar_usuario(request)
+  
 #Eliminar Usuario por ID
 @app.route('/Usuarios/<usuario_id>', methods=['DELETE'])
-def elimnar_usuario(usuario_id):
-    try: 
-        cursor= conexion.connection.cursor()
-        sql = "DELETE FROM Usuarios WHERE usuario_id = '{0}'".format(usuario_id)
-        cursor.execute(sql)
-        conexion.connection.commit()#confirma la eliminacion
-        return jsonify({'mensaje':"Usuario Eliminado!"})    
-    except Exception as e:
-        return jsonify({'mensaje':"ERROR"})
+def eliminar_usuario(usuario_id):
+        return usuarios.eliminar_usuario(usuario_id)   
 
 #Actualizar Usuario
 @app.route('/Usuarios/<usuario_id>', methods=['PUT'])
 def actualizar_usuario(usuario_id):
-    try:
-        cursor = conexion.connection.cursor()
-        sql = """UPDATE Usuarios SET nombre='{0}',correo='{1}',contrasena='{2}'
-        WHERE usuario_id = '{3}'""".format(request.json['nombre'],
-        request.json['correo'],request.json['contrasena'],usuario_id)
-        cursor.execute(sql)
-        conexion.connection.commit()#confirma la actualizacion
-        return jsonify({'mensaje':"Usuario Actualizado"})
-    except Exception as e:
-        return jsonify({'mensaje':"Error"})
+        return usuarios.actualizar_usuario(usuario_id, request)   
+
+#INICIO ENTIDAD PRODUCTOS
+#Consultar Productos
+@app.route('/Productos', methods=['GET'])
+def listar_productos():
+        return productos.listar_productos()
+
+#Consultar Producto por ID
+@app.route('/Productos/<producto_id>', methods=['GET'])
+def encontrar_producto(producto_id):
+         return productos.encontrar_producto(producto_id)
+
+#Ingresar Producto
+@app.route('/Productos', methods=['POST'])
+def insertar_producto():
+         return productos.insertar_producto(request)
+
+#Eliminar Producto por ID
+@app.route('/Productos/<producto_id>', methods=['DELETE'])
+def eliminar_producto(producto_id):
+        return productos.eliminar_producto(producto_id)   
+
+#Actualizar Producto
+@app.route('/Productos/<producto_id>', methods=['PUT'])
+def actualizar_producto(producto_id):
+        return productos.actualizar_producto(producto_id, request)  
 
 def pagina_no_encontrada(error):
     return "<h1> LA PAGINA QUE INTENTAS BUSCAR NO EXISTE!</h1>", 404
 
 if __name__ == '__main__':
-    app.config.from_object(config['development'])
     app.register_error_handler(404,pagina_no_encontrada)
     app.run()
 
